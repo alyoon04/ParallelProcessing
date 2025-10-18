@@ -1,0 +1,15 @@
+build/
+*.o
+*.a
+*.so
+*.dylib
+.git/
+.gitignore
+*.md
+.DS_Store
+results/
+.vscode/
+.idea/
+*.swp
+*.swo
+*~

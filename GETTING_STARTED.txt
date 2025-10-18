@@ -1,0 +1,124 @@
+================================================================================
+  PARALLEL DATA PROCESSING LIBRARY
+================================================================================
+
+Welcome! This is a high-performance C++ library for parallel data processing.
+
+QUICK START (3 steps):
+----------------------
+
+1. BUILD THE PROJECT:
+   
+   make build
+   
+   (Or manually: mkdir build && cd build && cmake .. && make)
+
+2. RUN TESTS:
+   
+   make test
+
+3. RUN EXAMPLE:
+   
+   make run-example
+
+
+WHAT'S INCLUDED:
+----------------
+
+✅ Map-Reduce Engine - Parallel data transformation and aggregation
+✅ Parallel Sort - Multi-threaded sorting algorithm
+✅ Aggregation Functions - Sum, mean, min, max, custom reducers
+✅ Thread Pool Manager - Efficient worker thread management
+✅ Comprehensive Tests - Full test coverage
+✅ Benchmarking Suite - Performance measurement tools
+✅ Docker Support - Containerized build environment
+
+
+DOCUMENTATION:
+--------------
+
+📖 QUICK_START.md - Start here! (5-minute guide)
+📖 README.md - Full API reference and examples
+📖 BUILD.md - Detailed build instructions
+📖 PROJECT_SUMMARY.md - Complete project overview
+
+
+EXAMPLE USAGE:
+--------------
+
+#include "parallel.h"
+
+int main() {
+    std::vector<int> data(1000000);
+    std::iota(data.begin(), data.end(), 0);
+    
+    // Map-Reduce
+    auto map_fn = [](int x) { return x * x; };
+    auto reduce_fn = [](long long a, long long b) { return a + b; };
+    auto result = Parallel::mapReduce(data, map_fn, reduce_fn, 8);
+    
+    // Parallel Sort
+    Parallel::parallelSort(data, 8);
+    
+    // Aggregation
+    auto sum = Parallel::parallelSum(data, 8);
+    auto mean = Parallel::parallelMean(data, 8);
+    
+    return 0;
+}
+
+
+MAKEFILE COMMANDS:
+------------------
+
+  make build            - Build the project
+  make test             - Run test suite
+  make run-example      - Run example program
+  make benchmark        - Run performance benchmarks
+  make full-benchmark   - Run benchmarks + generate plots
+  make docker-build     - Build Docker image
+  make help             - Show all available commands
+
+
+BENCHMARKING:
+-------------
+
+Run benchmarks:    make benchmark
+Python automation: make benchmark-python
+Generate plots:    make plot
+Full suite:        make full-benchmark
+
+
+DOCKER USAGE:
+-------------
+
+Build image:       make docker-build
+Run container:     make docker-run
+Run benchmarks:    make docker-benchmark
+
+
+REQUIREMENTS:
+-------------
+
+Build: C++17 compiler (GCC 7+, Clang 5+), CMake 3.14+
+Optional: Python 3.7+ (for benchmarking/plotting)
+
+
+PERFORMANCE:
+------------
+
+Expected speedups with 8 threads:
+  • Map-Reduce: ~6-7x faster
+  • Parallel Sort: ~4-5x faster
+  • Aggregation: ~7-8x faster
+
+
+SUPPORT:
+--------
+
+Issues? Check the troubleshooting section in BUILD.md
+
+
+Happy parallel processing! 🚀
+
+================================================================================
