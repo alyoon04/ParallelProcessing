@@ -1,7 +1,8 @@
 # Convenience Makefile for Parallel Processing Library
 # This wraps CMake commands for easier usage
 
-.PHONY: all build clean test run-tests run-example benchmark help install docker-build docker-run
+.PHONY: all build clean test run-tests run-example benchmark help install docker-build docker-run \
+        test-asan test-tsan test-ubsan test-sanitizers build-asan build-tsan build-ubsan
 
 # Default target
 all: build
@@ -83,6 +84,56 @@ setup-python:
 	@echo "Setting up Python environment..."
 	@pip3 install -r python/requirements.txt
 
+# =========================================
+# Sanitizer Targets
+# =========================================
+
+# Build with AddressSanitizer (memory errors, leaks)
+build-asan:
+	@echo "Building with AddressSanitizer..."
+	@mkdir -p build-asan
+	@cd build-asan && cmake .. -DENABLE_ASAN=ON && $(MAKE) -j$$(nproc 2>/dev/null || sysctl -n hw.ncpu 2>/dev/null || echo 4)
+	@echo "ASan build complete!"
+
+# Build with ThreadSanitizer (data races)
+build-tsan:
+	@echo "Building with ThreadSanitizer..."
+	@mkdir -p build-tsan
+	@cd build-tsan && cmake .. -DENABLE_TSAN=ON && $(MAKE) -j$$(nproc 2>/dev/null || sysctl -n hw.ncpu 2>/dev/null || echo 4)
+	@echo "TSan build complete!"
+
+# Build with UndefinedBehaviorSanitizer
+build-ubsan:
+	@echo "Building with UndefinedBehaviorSanitizer..."
+	@mkdir -p build-ubsan
+	@cd build-ubsan && cmake .. -DENABLE_UBSAN=ON && $(MAKE) -j$$(nproc 2>/dev/null || sysctl -n hw.ncpu 2>/dev/null || echo 4)
+	@echo "UBSan build complete!"
+
+# Run tests with AddressSanitizer
+test-asan: build-asan
+	@echo "Running tests with AddressSanitizer..."
+	@ASAN_OPTIONS=detect_leaks=1:abort_on_error=1 ./build-asan/test_suite
+
+# Run tests with ThreadSanitizer
+test-tsan: build-tsan
+	@echo "Running tests with ThreadSanitizer..."
+	@TSAN_OPTIONS=abort_on_error=1 ./build-tsan/test_suite
+
+# Run tests with UndefinedBehaviorSanitizer
+test-ubsan: build-ubsan
+	@echo "Running tests with UndefinedBehaviorSanitizer..."
+	@UBSAN_OPTIONS=print_stacktrace=1:abort_on_error=1 ./build-ubsan/test_suite
+
+# Run all sanitizer tests (ASan first, then TSan, then UBSan)
+test-sanitizers: test-asan test-tsan test-ubsan
+	@echo "All sanitizer tests complete!"
+
+# Clean sanitizer build directories
+clean-sanitizers:
+	@echo "Cleaning sanitizer build directories..."
+	@rm -rf build-asan build-tsan build-ubsan
+	@echo "Sanitizer builds cleaned!"
+
 # Help target
 help:
 	@echo "Parallel Processing Library - Make Targets"
@@ -98,6 +149,16 @@ help:
 	@echo "  make test             - Run test suite"
 	@echo "  make run-tests        - Alias for 'make test'"
 	@echo "  make run-example      - Run example program"
+	@echo ""
+	@echo "Sanitizer Targets (Memory/Thread Safety):"
+	@echo "  make build-asan       - Build with AddressSanitizer"
+	@echo "  make build-tsan       - Build with ThreadSanitizer"
+	@echo "  make build-ubsan      - Build with UndefinedBehaviorSanitizer"
+	@echo "  make test-asan        - Run tests with AddressSanitizer"
+	@echo "  make test-tsan        - Run tests with ThreadSanitizer"
+	@echo "  make test-ubsan       - Run tests with UndefinedBehaviorSanitizer"
+	@echo "  make test-sanitizers  - Run all sanitizer tests"
+	@echo "  make clean-sanitizers - Clean sanitizer build directories"
 	@echo ""
 	@echo "Benchmark Targets:"
 	@echo "  make benchmark        - Run C++ benchmark"
