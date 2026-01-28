@@ -3,12 +3,13 @@
 
 #include <vector>
 #include <thread>
-#include <queue>
 #include <mutex>
 #include <condition_variable>
 #include <functional>
 #include <future>
 #include <atomic>
+#include <random>
+#include "work_stealing_deque.h"
 
 namespace Parallel {
 
@@ -38,16 +39,20 @@ public:
 
 private:
     std::vector<std::thread> workers_;
-    std::queue<std::function<void()>> tasks_;
+    std::vector<std::unique_ptr<WorkStealingDeque>> deques_;  // Per-thread deques
 
-    std::mutex queue_mutex_;
+    std::mutex wake_mutex_;
     std::condition_variable condition_;
 
     std::atomic<bool> stop_;
     std::atomic<size_t> chunk_size_;
+    std::atomic<size_t> next_submit_index_;  // Round-robin submission
     size_t num_threads_;
 
-    void workerThread();
+    void workerThread(size_t worker_id);
+
+    // Try to steal a task from another worker's deque
+    std::optional<std::function<void()>> trySteal(size_t worker_id);
 };
 
 // Template implementation
@@ -63,17 +68,17 @@ auto ThreadManager::submit(Func&& func, Args&&... args)
 
     std::future<return_type> result = task->get_future();
 
-    {
-        std::unique_lock<std::mutex> lock(queue_mutex_);
-
-        if (stop_) {
-            throw std::runtime_error("Cannot submit task to stopped ThreadManager");
-        }
-
-        tasks_.emplace([task]() { (*task)(); });
+    if (stop_) {
+        throw std::runtime_error("Cannot submit task to stopped ThreadManager");
     }
 
+    // Round-robin distribution to worker deques
+    size_t target = next_submit_index_.fetch_add(1, std::memory_order_relaxed) % num_threads_;
+    deques_[target]->push([task]() { (*task)(); });
+
+    // Wake one worker (they will steal if needed)
     condition_.notify_one();
+
     return result;
 }
 
